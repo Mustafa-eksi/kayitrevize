@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="bootstrap.min.css"/>
+    <title>Kayit-revize-rapor uygulaması</title>
+</head>
+<body>
+    <button id="tikla">tikla</button>
+    <script>
+        const {ipcRenderer} = require('electron');
+        let tcart = 155;
+        let tik = document.querySelector("#tikla");
+        tik.addEventListener('click', ()=>{
+            tcart = tcart+1;
+            ipcRenderer.invoke('kayit', {tc:tcart, isimsoyisim:"mustafa ekşi", roller:"araştırmacı,takım üyesi"}).then((v)=>{
+                console.log(v)
+            }).catch((err)=>{
+                console.error(err);
+            })
+        })
+    </script>
+</body>
+</html>
