@@ -1,11 +1,15 @@
 const electron = require('electron');
 const url = require("url");
 const path = require("path");
+const excel = require('exceljs');
+const workbook = new excel.Workbook();
 const {app, BrowserWindow, ipcMain} = electron;
 const sql = require("sqlite3").verbose();
 const db = new sql.Database("./database.db", sql.OPEN_READWRITE, (err) => {
     if(err) return console.error(err.message);
 });
+
+const ROLLER_DIZISI = ["Yazılımcı", "Yardımcı", "Takım üyesi", "Araştırmacı"]; // veritabanına kaydederken rolün bu dizideki sırası kullanılacak. Mesela "Yazılımcı" için 0, "Takım üyesi" için 2 gibi.
 
 function kartidOlustur() {
     var kartid = "1";
@@ -39,7 +43,7 @@ function kartidkontrol(kartid) {
 
 function kayit(tc, isimsoyisim, roller) {
     return new Promise((res,rej)=>{
-        if(!tc || !isimsoyisim || !roller || isNaN(tc)) {
+        if(!tc || !isimsoyisim || isNaN(tc)) {
             rej("Girilen bilgiler hatalı")
             return;
         }
@@ -67,6 +71,41 @@ function kayit(tc, isimsoyisim, roller) {
     })
 }
 
+function coklukayit(bilgiler) {
+    return new Promise((res,rej)=>{
+        if(bilgiler.length === 0) {
+            res("İşlem bitti.");
+        }else {
+            kayit(bilgiler[0].tc, bilgiler[0].isimsoyisim, bilgiler[0].roller).then((v)=>{
+                let yeni = bilgiler;
+                yeni.shift();
+                coklukayit(yeni).then((v)=>{
+                    res(v);
+                }).catch((err)=>{
+                    if(err) {
+                        rej(err)
+                    }
+                })
+            }).catch((err)=>{
+                if(err) {
+                    rej(err)
+                }
+            })
+        }
+    })
+}
+
+function rollerdenIndekslere(roller) {
+    let result = [];
+    for(let i = 0; i < roller.length; i++) {
+        let ind = ROLLER_DIZISI.indexOf(roller[i]);
+        if(ind !== -1) {
+            result.push(ind);
+        }
+    }
+    return result;
+}
+
 app.on('ready', ()=>{
     mainWindow = new BrowserWindow({
         webPreferences: {
@@ -90,6 +129,32 @@ app.on('ready', ()=>{
                     rej(err)
                 }
             })
+        })
+    });
+    ipcMain.handle('coklu-kayit', (e, path)=>{
+        return new Promise((res,rej)=>{
+            workbook.xlsx.readFile(path).then(()=>{
+                const worksheet = workbook.getWorksheet('Sheet1');
+                let bilgiler = [];
+                for(let i = 2; i <= worksheet.rowCount; i++) {
+                    const row = worksheet.getRow(i);
+                    const tckn = parseInt(row.getCell('A').text);
+                    if(isNaN(tckn)) {
+                        break;
+                    }
+                    const isimsoyisim = row.getCell('B').value.toString();
+                    const roller = row.getCell('C').value.toString();
+                    let rolind = rollerdenIndekslere(roller.split(',')).join(',');
+                    bilgiler.push({
+                        tc: tckn,
+                        isimsoyisim: isimsoyisim,
+                        roller: rolind
+                    })
+                }
+                coklukayit(bilgiler).then((v)=>{
+                    res(v);
+                }).catch((err)=>{ if(err) rej(err) })
+            }).catch((err)=>{ if(err) rej(err) });
         })
     });
 })

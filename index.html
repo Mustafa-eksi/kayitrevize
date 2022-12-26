@@ -4,23 +4,30 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="bootstrap.min.css"/>
+    <link rel="stylesheet" href="bootstrap.min.css">
     <title>Kayit-revize-rapor uygulaması</title>
 </head>
 <body>
-    <button id="tikla">tikla</button>
+    <div class="mb-3">
+        <label for="formFile" class="form-label">Default file input example</label>
+        <input class="form-control" type="file" id="formFile">
+    </div>      
+        
     <script>
         const {ipcRenderer} = require('electron');
         let tcart = 155;
-        let tik = document.querySelector("#tikla");
-        tik.addEventListener('click', ()=>{
-            tcart = tcart+1;
-            ipcRenderer.invoke('kayit', {tc:tcart, isimsoyisim:"mustafa ekşi", roller:"araştırmacı,takım üyesi"}).then((v)=>{
-                console.log(v)
+        const finput = document.querySelector("#formFile");
+        finput.addEventListener('change',()=>{
+            let val = finput.files[0].path;
+            ipcRenderer.invoke('coklu-kayit', val).then((v)=>{
+                alert("İşlem başarıyla tamamlandı!")
             }).catch((err)=>{
-                console.error(err);
+                if(err) {
+                    console.error("HATA: ", err)
+                }
             })
         })
+        
     </script>
 </body>
 </html>
