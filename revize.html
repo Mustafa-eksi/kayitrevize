@@ -19,5 +19,49 @@
           <a class="nav-link" href="rapor.html">Rapor</a>
         </li>
     </ul>
+    <div class="m-3">
+        <div class="input-group mb-2">
+            <span class="input-group-text" id="tcno">T.C. Kimlik no:</span>
+            <input type="text" class="form-control" placeholder="T.C. kimlik no giriniz" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text" id="isim">İsim-soyisim:</span>
+            <input type="text" class="form-control" disabled="true" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text" id="kartid">Kartid:</span>
+            <input type="text" class="form-control" disabled="true" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div id="tekli">
+            <div class="form-check invisible" id="model">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+                <label class="form-check-label" for="flexCheckDefault" id="labol">
+                  Default checkbox
+                </label>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary mt-3" id="update">Güncelle</button>
+    </div>
+    <script>
+        const {ipcRenderer} = require('electron');
+        const tcin = document.querySelector("#tcno");
+        const check_model = document.querySelector("#model");
+        const tekli = document.querySelector("#tekli");
+        tcin.addEventListener('change', ()=>{
+            ipcRenderer.invoke('get-user', parseInt(tcin)).then((v)=>{
+                for(let i = 0; i < v.roller.length; i++) {
+                    let a = check_model.cloneNode(true);
+                    a.className = "form-check";
+                    a.querySelector(":scope > #labol").textContent = v.roller[i];
+                    tekli.appendChild(a);
+                }
+            }).catch((err)=>{
+                if(err) {
+                    alert(err);
+                    console.error(err);
+                }
+            })
+        })
+    </script>
 </body>
 </html>

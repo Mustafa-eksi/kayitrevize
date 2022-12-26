@@ -106,6 +106,44 @@ function rollerdenIndekslere(roller) {
     return result;
 }
 
+function UpdateUser(tc, yeniroller) {
+    return new Promise((res,rej)=>{
+        db.all("select roller,sicilno from users where tc_no=?", [tc], (err, rows)=>{
+            let eskiroller = rows[0]["roller"];
+            let sicilno = rows[0]["sicil_no"];
+            db.run("update users set roller=? where tc_no=?", [yeniroller, tc], (err)=>{
+                if(err) {
+                    rej(err.message);
+                }else {
+                    db.run("insert into revize (sicil_no,onceki_roller,sonraki_roller,ts) values (?,?,?,?)", [sicilno, eskiroller, yeniroller, new Date(Date.now()).toLocaleString()], (err)=>{
+                        if(err) {
+                            rej(err.message);
+                        }else {
+                            res("İşlem başarıyla gerçekleştirildi")
+                        }
+                    })
+                }
+            })
+        })
+    })
+}
+
+function GetUser(tc) {
+    return new Promise((res,rej)=>{
+        db.all("select isim_soyisim, kartid, roller from users where tc_no=?", [tc], (err, rows)=>{
+            if(err) {
+                rej(err.message);
+                return console.error(err);
+            }
+            res({
+                isim_soyisim: rows[0]["isim_soyisim"],
+                kartid: rows[0]["kartid"],
+                roller: rows[0]["roller"]
+            })
+        })
+    })
+}
+
 app.on('ready', ()=>{
     mainWindow = new BrowserWindow({
         webPreferences: {
@@ -158,4 +196,10 @@ app.on('ready', ()=>{
         })
     });
     ipcMain.handle('roller', (e)=>{return ROLLER_DIZISI});
+    
+    ipcMain.handle('get-user', (e, tc)=>{
+        return new Promise((res,rej)=>{
+            GetUser(tc).then((v)=>{res(v)}).catch((err)=>{if(err) rej(err)})
+        })
+    })
 })
