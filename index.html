@@ -5,29 +5,106 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="bootstrap.min.css">
+    <style>
+        .invisible {
+            position: absolute;
+            left: -9999px;
+        }
+    </style>
     <title>Kayit-revize-rapor uygulaması</title>
 </head>
 <body>
-    <div class="mb-3">
-        <label for="formFile" class="form-label">Default file input example</label>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="#">Kayıt</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="revize.html">Revize</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="rapor.html">Rapor</a>
+        </li>
+    </ul>
+    <div class="m-3">
+        <label for="formFile" class="form-label" style="font-weight: bold;">Çoklu kayıt</label>
         <input class="form-control" type="file" id="formFile">
     </div>      
-        
+    <div class="m-3">
+        <label for="formFile" class="form-label" style="font-weight: bold;">Tek kayıt</label>
+        <div>
+            <div class="input-group mb-2">
+                <span class="input-group-text" id="basic-addon1">T.C. Kimlik No:</span>
+                <input type="text" class="form-control" aria-label="Username" aria-describedby="basic-addon1" id="tcno">
+            </div>
+            <div class="input-group mb-2">
+                <span class="input-group-text" id="basic-addon1">İsim-soyisim:</span>
+                <input type="text" class="form-control" aria-label="Username" aria-describedby="basic-addon1" id="isim_soyisim">
+            </div>
+        </div>
+        <div id="tekli">
+            <div class="form-check invisible" id="model">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+                <label class="form-check-label" for="flexCheckDefault" id="labol">
+                  Default checkbox
+                </label>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary mt-3" id="kaydet">Kaydet</button>
+    </div>  
     <script>
         const {ipcRenderer} = require('electron');
         let tcart = 155;
         const finput = document.querySelector("#formFile");
+        const check_model = document.querySelector("#model");
+        const tekli = document.querySelector("#tekli");
+        const kaydet = document.querySelector("#kaydet");
+        let roller_dizisi = [];
+        
+        ipcRenderer.invoke('roller').then((v)=>{
+            roller_dizisi = v;
+            console.log(roller_dizisi)
+            for(let i = 0; i < roller_dizisi.length; i++) {
+                let a = check_model.cloneNode(true);
+                a.className = "form-check";
+                a.querySelector(":scope > #labol").textContent = roller_dizisi[i];
+                tekli.appendChild(a);
+            }
+        })
+        
+        kaydet.addEventListener('click',()=>{
+            let isimsoy = document.querySelector("#isim_soyisim").value;
+            let tckno = document.querySelector("#tcno").value;
+            let roller = [];
+            for(let i = 1; i < tekli.childElementCount; i++) {
+                if(tekli.children[i].querySelector(":scope > #flexCheckDefault").checked) {
+                    roller.push(i-1);
+                }
+            }
+            ipcRenderer.invoke('kayit', {
+                tc: parseInt(tckno),
+                isimsoyisim:isimsoy,
+                roller:roller.join(',')
+            }).then((v)=>{
+                alert(v);
+            }).catch((err)=>{
+                if(err) {
+                    alert(err)
+                    console.error(err);
+                }
+            })
+        })
+
         finput.addEventListener('change',()=>{
             let val = finput.files[0].path;
             ipcRenderer.invoke('coklu-kayit', val).then((v)=>{
                 alert("İşlem başarıyla tamamlandı!")
             }).catch((err)=>{
                 if(err) {
-                    console.error("HATA: ", err)
+                    alert("HATA: ", err)
+                    console.error(err);
                 }
             })
         })
-        
     </script>
 </body>
 </html>

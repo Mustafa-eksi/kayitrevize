@@ -12,8 +12,8 @@ const db = new sql.Database("./database.db", sql.OPEN_READWRITE, (err) => {
 const ROLLER_DIZISI = ["Yazılımcı", "Yardımcı", "Takım üyesi", "Araştırmacı"]; // veritabanına kaydederken rolün bu dizideki sırası kullanılacak. Mesela "Yazılımcı" için 0, "Takım üyesi" için 2 gibi.
 
 function kartidOlustur() {
-    var kartid = "1";
-    for(var k = 1; k <= 1; k++) {
+    var kartid = "42";
+    for(var k = 1; k <= 5; k++) {
         var sayi = Math.floor(Math.random() * 10).toString();
         kartid += sayi;
     }
@@ -157,4 +157,5 @@ app.on('ready', ()=>{
             }).catch((err)=>{ if(err) rej(err) });
         })
     });
+    ipcMain.handle('roller', (e)=>{return ROLLER_DIZISI});
 })
