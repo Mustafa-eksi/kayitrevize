@@ -170,6 +170,10 @@
         tcnorev.addEventListener("change", ()=>{
             let val = tcnorev.value;
             ipcRenderer.invoke('get-user', parseInt(val)).then((v)=>{
+                if(!v) {
+                    alertb("Girilen bilgiler hatalı.", "danger")
+                    return;
+                }
                 isimsoy.value = v.isim_soyisim;
                 kartidrev.value = v.kartid;
                 let rollerimiz = v.roller.split(',');
@@ -179,7 +183,8 @@
                 }
             }).catch((err)=>{
                 if(err) {
-                    console.error(err);
+                    alertb("kullanıcı bulunamadı", "danger")
+                    console.info(err);
                 }
             })
         })

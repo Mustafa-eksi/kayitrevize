@@ -5,6 +5,8 @@ const excel = require('exceljs');
 const workbook = new excel.Workbook();
 const {app, BrowserWindow, ipcMain} = electron;
 const sql = require("sqlite3").verbose();
+var qr = require('qr-image');
+const fs = require('fs');
 const db = new sql.Database("./database.db", sql.OPEN_READWRITE, (err) => {
     if(err) return console.error(err.message);
 });
@@ -62,10 +64,13 @@ function kayit(tc, isimsoyisim, roller) {
                         if(err) {
                             rej(err.message);
                             return;
+                        }else {
+                            var qr_svg = qr.image(v, { type: 'png' });
+                            qr_svg.pipe(require('fs').createWriteStream("./qrlar/"+isimsoyisim+'.png'));
+                            res("Kullanici eklendi")
                         }
                     }
                 );
-                res("Kullanici eklendi")
             })
         })
     })
@@ -138,6 +143,10 @@ function GetUser(tc) {
             if(err) {
                 rej(err.message);
                 return console.error(err);
+            }
+            if(!rows[0]) {
+                rej("Kullanıcı bulunamadı");
+                return;
             }
             res({
                 isim_soyisim: rows[0]["isim_soyisim"],
