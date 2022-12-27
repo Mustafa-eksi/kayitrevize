@@ -108,7 +108,11 @@ function rollerdenIndekslere(roller) {
 
 function UpdateUser(tc, yeniroller) {
     return new Promise((res,rej)=>{
-        db.all("select roller,sicilno from users where tc_no=?", [tc], (err, rows)=>{
+        db.all("select roller,sicil_no from users where tc_no=?", [tc], (err, rows)=>{
+            if(err) {
+                rej(err.message);
+                return console.error(err.message);
+            }
             let eskiroller = rows[0]["roller"];
             let sicilno = rows[0]["sicil_no"];
             db.run("update users set roller=? where tc_no=?", [yeniroller, tc], (err)=>{
@@ -201,5 +205,9 @@ app.on('ready', ()=>{
         return new Promise((res,rej)=>{
             GetUser(tc).then((v)=>{res(v)}).catch((err)=>{if(err) rej(err)})
         })
+    })
+
+    ipcMain.handle('revize', (e, tc, yeniroller)=>{
+        return UpdateUser(tc, yeniroller);
     })
 })
