@@ -11,6 +11,7 @@
             left: -9999px;
         }
     </style>
+    <script src="bootstrap.bundle.min.js"></script>
     <title>Kayit-revize-rapor uygulaması</title>
 </head>
 <body>
@@ -30,6 +31,10 @@
         <div class="m-3">
             <label for="formFile" class="form-label" style="font-weight: bold;">Çoklu kayıt</label>
             <input class="form-control" type="file" id="formFile">
+            <button type="button" class="btn btn-primary mt-3" id="coklukaydet">Dosyadakileri kaydet</button>
+            <button type="button" class="btn btn-info btn-info mt-3" data-bs-toggle="popover" data-bs-title="Excel dosyası nasıl olmalı?" data-bs-content="Sütun sırası şöyledir: T.C. Kimlik no, İsim-soyisim (aynı sütunda) ve roller.
+            Seçeceğiniz excel'in ilk satırı sütun isimleri yazılacağından görmezden gelinir.
+            Eğer bir satırdaki kişi veritabanında zaten kayıtlıysa bu satır es geçilir, eğer dosyanın tamamı zaten kayıtlıysa veritabanına hiçbir şey eklenmez. Girilen satırlar arasında boş satır bırakılması önerilmez.">Nasıl çalışır?</button>
         </div>      
         <div class="m-3">
             <label for="formFile" class="form-label" style="font-weight: bold;">Tek kayıt</label>
@@ -80,6 +85,7 @@
         const tekli = document.querySelector("#tekli");
         const rolliste = document.querySelector("#ekran2 > #rolliste");
         const kaydet = document.querySelector("#kaydet");
+        const coklukaydet = document.querySelector("#coklukaydet");
         const kartidrev = document.querySelector("#kartidrev");
         let tcnorev = document.querySelector("#tcnorev");
         const isimsoy = document.querySelector("#isimrev");
@@ -88,6 +94,11 @@
         let roller_dizisi = [];
         let currentTab = 1;
 
+        document.querySelectorAll('[data-bs-toggle="popover"]')
+            .forEach(popover => {
+                new bootstrap.Popover(popover)
+            })
+        
         // Bu alert metodunu https://getbootstrap.com/docs/5.3/components/alerts/#examples'den aldım ama biraz değiştirdim
         const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
         const alertb = (message, type) => {
@@ -155,7 +166,10 @@
             })
         })
 
-        finput.addEventListener('change',()=>{
+        coklukaydet.addEventListener('click',()=>{
+            if(!finput.files[0]) {
+                alertb("Çoklu kayıt için dosya seçiniz", "danger")
+            }
             let val = finput.files[0].path;
             ipcRenderer.invoke('coklu-kayit', val).then((v)=>{
                 alertb("İşlem başarıyla tamamlandı!", 'success')

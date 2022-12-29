@@ -81,7 +81,7 @@ function coklukayit(bilgiler) {
         if(bilgiler.length === 0) {
             res("İşlem bitti.");
         }else {
-            kayit(bilgiler[0].tc, bilgiler[0].isimsoyisim, bilgiler[0].roller).then((v)=>{
+            kayit(bilgiler[0].tc, bilgiler[0].isimsoyisim, bilgiler[0].roller).then((v1)=>{
                 let yeni = bilgiler;
                 yeni.shift();
                 coklukayit(yeni).then((v)=>{
@@ -93,7 +93,19 @@ function coklukayit(bilgiler) {
                 })
             }).catch((err)=>{
                 if(err) {
-                    rej(err)
+                    if(err === "Bu tc veritabanında zaten kayıtlı") {
+                        let yeni = bilgiler;
+                        yeni.shift();
+                        coklukayit(yeni).then((v)=>{
+                            res(v);
+                        }).catch((err)=>{
+                            if(err) {
+                                rej(err)
+                            }
+                        })
+                    }else {
+                        rej(err)
+                    }
                 }
             })
         }
