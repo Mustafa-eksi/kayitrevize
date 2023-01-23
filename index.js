@@ -11,7 +11,13 @@ const db = new sql.Database("./database.db", sql.OPEN_READWRITE, (err) => {
     if(err) return console.error(err.message);
 });
 
-const ROLLER_DIZISI = ["Yazılımcı", "Yardımcı", "Takım üyesi", "Araştırmacı"]; // veritabanına kaydederken rolün bu dizideki sırası kullanılacak. Mesela "Yazılımcı" için 0, "Takım üyesi" için 2 gibi.
+const ROLLER_DIZISI = [
+    {name: "Yazılımcı", aynianda_secilebilir:true},
+    {name: "Yardımcı", aynianda_secilebilir:true},
+    {name: "Takım üyesi", aynianda_secilebilir:false},
+    {name: "Araştırmacı", aynianda_secilebilir:false},
+    {name: "Bireysel", aynianda_secilebilir:true, bireyselmi:true},
+]
 
 function kartidOlustur() {
     var kartid = "42";
@@ -43,11 +49,30 @@ function kartidkontrol(kartid) {
     })
 }
 
+function rolKontrol(roller) { // roller: string ("1,2,3" gibi). Roller tutarlıysa true, çelişkiliyse false döndürür.
+    let roll = roller.split(",");
+    let aynandasecti = false;
+    if(!roll.includes(ROLLER_DIZISI.indexOf(ROLLER_DIZISI.filter((v)=>v.bireyselmi === true)).toString()))
+        return false;
+    for(let i = 0; i < roll.length; i++) {
+        if(!ROLLER_DIZISI[parseInt(roll[i])].aynianda_secilebilir && !aynandasecti) {
+            aynandasecti = true;
+        }else if(!ROLLER_DIZISI[parseInt(roll[i])].aynianda_secilebilir && aynandasecti) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//bireysel rolünü otomatik kaydet
 function kayit(tc, isimsoyisim, roller) {
     return new Promise((res,rej)=>{
         if(!tc || !isimsoyisim || isNaN(tc)) {
             rej("Girilen bilgiler hatalı")
             return;
+        }
+        if(!rolKontrol(roller)) {
+            return rej("Roller hatalı");
         }
         db.all("select count(*) from users where tc_no=?", [tc], (err, rows1)=>{
             if(err) {
@@ -75,7 +100,7 @@ function kayit(tc, isimsoyisim, roller) {
         })
     })
 }
-
+// rollerin doğruluğunu kontrol et yanlışsa reject
 function coklukayit(bilgiler) {
     return new Promise((res,rej)=>{
         if(bilgiler.length === 0) {
@@ -115,7 +140,7 @@ function coklukayit(bilgiler) {
 function rollerdenIndekslere(roller) {
     let result = [];
     for(let i = 0; i < roller.length; i++) {
-        let ind = ROLLER_DIZISI.indexOf(roller[i]);
+        let ind = ROLLER_DIZISI.indexOf(ROLLER_DIZISI.filter((v)=>v.name===roller[i]));
         if(ind !== -1) {
             result.push(ind);
         }
@@ -151,7 +176,7 @@ function UpdateUser(tc, yeniroller) {
 
 function GetUser(tc) {
     return new Promise((res,rej)=>{
-        db.all("select isim_soyisim, kartid, roller from users where tc_no=?", [tc], (err, rows)=>{
+        db.all("select sicil_no, isim_soyisim, kartid, roller from users where tc_no=?", [tc], (err, rows)=>{
             if(err) {
                 rej(err.message);
                 return console.error(err);
@@ -163,7 +188,29 @@ function GetUser(tc) {
             res({
                 isim_soyisim: rows[0]["isim_soyisim"],
                 kartid: rows[0]["kartid"],
-                roller: rows[0]["roller"]
+                roller: rows[0]["roller"],
+                sicil_no:rows[0]["sicil_no"]
+            })
+        })
+    })
+}
+
+function GetUserSicil(sicil) {
+    return new Promise((res,rej)=>{
+        db.all("select tc_no, isim_soyisim, kartid, roller from users where sicil_no=?", [sicil], (err, rows)=>{
+            if(err) {
+                rej(err.message);
+                return console.error(err);
+            }
+            if(!rows[0]) {
+                rej("Kullanıcı bulunamadı");
+                return;
+            }
+            res({
+                isim_soyisim: rows[0]["isim_soyisim"],
+                kartid: rows[0]["kartid"],
+                roller: rows[0]["roller"],
+                tc_no:rows[0]["tc_no"]
             })
         })
     })
@@ -222,10 +269,12 @@ app.on('ready', ()=>{
     });
     ipcMain.handle('roller', (e)=>{return ROLLER_DIZISI});
     
-    ipcMain.handle('get-user', (e, tc)=>{
-        return new Promise((res,rej)=>{
-            GetUser(tc).then((v)=>{res(v)}).catch((err)=>{if(err) rej(err)})
-        })
+    ipcMain.handle('get-user', async(e, tc)=>{
+        return await GetUser(tc);
+    })
+
+    ipcMain.handle('get-user-sicil', async(e,sicil)=>{
+        return await GetUserSicil(sicil);
     })
 
     ipcMain.handle('revize', (e, tc, yeniroller)=>{

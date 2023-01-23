@@ -23,7 +23,7 @@
           <a class="nav-link">Revize</a>
         </li>
         <li class="nav-item" id="tab3">
-          <a class="nav-link">Rapor</a>
+          <a class="nav-link">Sorgu</a>
         </li>
     </ul>
     <div id="liveAlertPlaceholder"></div>
@@ -52,10 +52,25 @@
                 <div class="form-check invisible" id="model">
                     <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
                     <label class="form-check-label" for="flexCheckDefault" id="labol">
-                    Default checkbox
+                </div>
+            </div>
+            <div id="#radio1">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                    <label class="form-check-label" for="flexRadioDefault1">
+                        Default radio
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" checked>
+                    <label class="form-check-label" for="flexRadioDefault2">
+                        Default checked radio
                     </label>
                 </div>
             </div>
+            <!-- <select class="form-select" aria-label="Default select example" id="dropdown1">
+                <option selected>Aynı anda seçilemeyen rollerden birini seçebilirsiniz</option>
+            </select> -->
             <button type="button" class="btn btn-primary mt-3" id="kaydet">Kaydet</button>
         </div>  
     </div>
@@ -63,6 +78,10 @@
         <div class="input-group mb-2">
             <span class="input-group-text" >T.C. Kimlik no:</span>
             <input type="text" id="tcnorev" class="form-control" placeholder="T.C. kimlik no giriniz" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text" >Sicilno:</span>
+            <input type="text" id="sicilrev" class="form-control" placeholder="Sicilno ile arayın" aria-label="Username" aria-describedby="basic-addon1">
         </div>
         <div class="input-group mb-2">
             <span class="input-group-text" >İsim-soyisim:</span>
@@ -77,6 +96,24 @@
         <button type="button" class="btn btn-primary mt-3" id="update">Güncelle</button>
     </div>
     <div class="m-3 invisible" id="ekran3">
+        <div class="input-group mb-2">
+            <span class="input-group-text" >T.C. Kimlik no:</span>
+            <input type="text" id="tcnosor" class="form-control" placeholder="T.C. kimlik no giriniz" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text" >Sicilno:</span>
+            <input type="text" id="sicilsor" class="form-control" placeholder="Sicilno ile arayın" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text" >İsim-soyisim:</span>
+            <input type="text" id="isimsor" class="form-control" disabled="true" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text" >Kartid:</span>
+            <input type="text" id="kartidsor" class="form-control" disabled="true" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div id="rollistesor">
+        </div>
     </div>
     <script>
         const {ipcRenderer} = require('electron');
@@ -87,12 +124,42 @@
         const kaydet = document.querySelector("#kaydet");
         const coklukaydet = document.querySelector("#coklukaydet");
         const kartidrev = document.querySelector("#kartidrev");
-        let tcnorev = document.querySelector("#tcnorev");
+        const tcnorev = document.querySelector("#tcnorev");
         const isimsoy = document.querySelector("#isimrev");
         const revizebuton = document.querySelector("#update");
+        const sicilrev = document.querySelector("#sicilrev");
+        const rollistesor = document.querySelector("#rollistesor");
+        const selectrol1 = document.querySelector("#dropdown1")
+        const radio1 = document.querySelector("#radio1");
         const tabbuttons =  [ document.querySelector("#tab1"), document.querySelector("#tab2"), document.querySelector("#tab3") ];
         let roller_dizisi = [];
         let currentTab = 1;
+
+        function rollisteOlustur(rollist, roller) {
+            rollist.innerHTML = "";
+            for(let i = 0; i < roller.length; i++) {
+                let a = check_model.cloneNode(true);
+                a.className = "form-check";
+                if(roller[i].bireyselmi === true) { // NOT: Bireysel rolün adı değiştirilirse bunun da değişmesi gerekir.
+                    a.querySelector(":scope > #flexCheckDefault").disabled = true;
+                    a.querySelector(":scope > #flexCheckDefault").checked = true;
+                }
+                if(roller[i].aynianda_secilebilir === false) {
+                    radio1
+                   /*  let ayn = document.createElement("option");
+                    ayn.innerText = roller[i].name;
+                    ayn.value = i;
+                    console.log(ayn)
+                    //ayn.innerHTML = `<option value="${i}">${roller[i].name}</option>`;
+                    selectrol1.appendChild(ayn);
+                    console.log(selectrol1) */
+
+                }else {
+                    a.querySelector(":scope > #labol").textContent = roller[i].name;
+                    rollist.appendChild(a);
+                }
+            }
+        }
 
         document.querySelectorAll('[data-bs-toggle="popover"]')
             .forEach(popover => {
@@ -117,13 +184,9 @@
         for(let i = 0; i < tabbuttons.length; i++) {
             tabbuttons[i].addEventListener('click', ()=>{
                 if(i == 1) {
-                    rolliste.innerHTML = "";
-                    for(let i = 0; i < roller_dizisi.length; i++) {
-                        let a = check_model.cloneNode(true);
-                        a.className = "form-check";
-                        a.querySelector(":scope > #labol").textContent = roller_dizisi[i];
-                        rolliste.appendChild(a);
-                    }
+                    rollisteOlustur(rolliste, roller_dizisi)
+                }else if(i === 2) {
+                    rollisteOlustur(rollistesor, roller_dizisi)
                 }
                 let fromtab = document.querySelector("#ekran"+currentTab);
                 fromtab.classList.add("invisible");
@@ -135,12 +198,7 @@
         }
         ipcRenderer.invoke('roller').then((v)=>{
             roller_dizisi = v;
-            for(let i = 0; i < roller_dizisi.length; i++) {
-                let a = check_model.cloneNode(true);
-                a.className = "form-check";
-                a.querySelector(":scope > #labol").textContent = roller_dizisi[i];
-                tekli.appendChild(a);
-            }
+            rollisteOlustur(tekli, roller_dizisi)
         })
         
         kaydet.addEventListener('click',()=>{
@@ -189,12 +247,10 @@
                     return;
                 }
                 isimsoy.value = v.isim_soyisim;
+                sicilrev.value = v.sicil_no;
                 kartidrev.value = v.kartid;
                 let rollerimiz = v.roller.split(',');
-                for(let i = 0; i < rollerimiz.length; i++) {
-                    let chckbx = rolliste.children[parseInt(rollerimiz[i])];
-                    chckbx.querySelector(":scope > #flexCheckDefault").checked = true;
-                }
+                rollisteDoldur(rolliste, rollerimiz);
             }).catch((err)=>{
                 if(err) {
                     alertb("kullanıcı bulunamadı", "danger")
@@ -221,6 +277,74 @@
                     console.error(err);
                 }
             })
+        })
+
+        function rollisteDoldur(rollistearg, rollerimiz) {
+            for(let i = 0; i < rollistearg.children.length; i++) {
+                rollistearg.children[i].querySelector(":scope > #flexCheckDefault").checked = false;
+            }
+            // bireyselse disabled olcak
+            for(let i = 0; i < rollerimiz.length; i++) {
+                let chckbx = rollistearg.children[parseInt(rollerimiz[i])];
+                chckbx.querySelector(":scope > #flexCheckDefault").checked = true;
+            }
+        }
+
+        sicilrev.addEventListener('change', async()=>{
+            let val = sicilrev.value;
+            let v = await ipcRenderer.invoke('get-user-sicil', parseInt(val)).catch((err)=>{
+                if(err) {
+                    alertb("kullanıcı bulunamadı", "danger")
+                    console.info(err);
+                }
+            });
+            if(!v) {
+                alertb("Girilen bilgiler hatalı.", "danger")
+                return;
+            }
+            isimsoy.value = v.isim_soyisim;
+            kartidrev.value = v.kartid;
+            tcnorev.value = v.tc_no
+            let rollerimiz = v.roller.split(',');
+            rollisteDoldur(rolliste, rollerimiz);
+        })
+
+        // EKRAN 3
+        const tcsor = document.querySelector("#tcnosor");
+        const sicilsor = document.querySelector("#sicilsor");
+        const isimsor = document.querySelector("#isimsor");
+        const kartidsor = document.querySelector("#kartidsor")
+        tcsor.addEventListener('change', ()=>{
+            let val = tcsor.value;
+            ipcRenderer.invoke('get-user', parseInt(val)).then((v)=>{
+                if(!v) {
+                    alertb("Girilen bilgiler hatalı.", "danger")
+                    return;
+                }
+                isimsor.value = v.isim_soyisim;
+                kartidsor.value = v.kartid;
+                sicilsor.value = v.sicil_no;
+                let rollerimiz = v.roller.split(',');
+                rollisteDoldur(rollistesor, rollerimiz)
+            }).catch((err)=>{
+                if(err) {
+                    alertb("kullanıcı bulunamadı", "danger")
+                    console.info(err);
+                }
+            })
+        })
+        sicilsor.addEventListener('change', async ()=>{
+            let val = sicilsor.value;
+            let kullanici = await ipcRenderer.invoke('get-user-sicil', parseInt(val)).catch((err)=>{if(err) {
+                    alertb("kullanıcı bulunamadı", "danger")
+                    console.info(err);
+                }});
+            if(!kullanici) return;
+            isimsor.value = kullanici.isim_soyisim;
+            kartidsor.value = kullanici.kartid;
+            tcsor.value = kullanici.tc_no;
+            let rollerimiz = kullanici.roller.split(',');
+            rollisteDoldur(rollistesor, rollerimiz)
         })
     </script>
 </body>

@@ -4,13 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-packager . kayitrevize --platform=win32 --arch=x64"
   },
   "author": "Mustafa Ekşi",
   "license": "MIT",
   "dependencies": {
     "electron": "^22.0.0",
     "exceljs": "^4.3.0",
-    "qr-image": "^3.2.0"
+    "qr-image": "^3.2.0",
+    "sqlite3": "^5.1.4"
   }
 }
