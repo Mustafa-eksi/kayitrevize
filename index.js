@@ -52,12 +52,15 @@ function kartidkontrol(kartid) {
 function rolKontrol(roller) { // roller: string ("1,2,3" gibi). Roller tutarlıysa true, çelişkiliyse false döndürür.
     let roll = roller.split(",");
     let aynandasecti = false;
-    if(!roll.includes(ROLLER_DIZISI.indexOf(ROLLER_DIZISI.filter((v)=>v.bireyselmi === true)).toString()))
+    if(!roll.includes(ROLLER_DIZISI.findIndex(v => v.bireyselmi).toString())) {
+        console.log("buraya")
         return false;
+    }
     for(let i = 0; i < roll.length; i++) {
         if(!ROLLER_DIZISI[parseInt(roll[i])].aynianda_secilebilir && !aynandasecti) {
             aynandasecti = true;
         }else if(!ROLLER_DIZISI[parseInt(roll[i])].aynianda_secilebilir && aynandasecti) {
+            console.log("hiyır")
             return false;
         }
     }
@@ -72,7 +75,7 @@ function kayit(tc, isimsoyisim, roller) {
             return;
         }
         if(!rolKontrol(roller)) {
-            return rej("Roller hatalı");
+            return rej("Roller hatalı: " + roller);
         }
         db.all("select count(*) from users where tc_no=?", [tc], (err, rows1)=>{
             if(err) {
@@ -140,7 +143,7 @@ function coklukayit(bilgiler) {
 function rollerdenIndekslere(roller) {
     let result = [];
     for(let i = 0; i < roller.length; i++) {
-        let ind = ROLLER_DIZISI.indexOf(ROLLER_DIZISI.filter((v)=>v.name===roller[i]));
+        let ind = ROLLER_DIZISI.findIndex(v=>v.name===roller[i]);
         if(ind !== -1) {
             result.push(ind);
         }
@@ -150,6 +153,9 @@ function rollerdenIndekslere(roller) {
 
 function UpdateUser(tc, yeniroller) {
     return new Promise((res,rej)=>{
+        if(!rolKontrol(yeniroller)) {
+            rej("Roller yanlış: " + yeniroller)
+        }
         db.all("select roller,sicil_no from users where tc_no=?", [tc], (err, rows)=>{
             if(err) {
                 rej(err.message);

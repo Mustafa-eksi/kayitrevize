@@ -54,23 +54,9 @@
                     <label class="form-check-label" for="flexCheckDefault" id="labol">
                 </div>
             </div>
-            <div id="#radio1">
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
-                    <label class="form-check-label" for="flexRadioDefault1">
-                        Default radio
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" checked>
-                    <label class="form-check-label" for="flexRadioDefault2">
-                        Default checked radio
-                    </label>
-                </div>
-            </div>
-            <!-- <select class="form-select" aria-label="Default select example" id="dropdown1">
+            <select class="form-select" aria-label="Default select example" id="dropdown1">
                 <option selected>Aynı anda seçilemeyen rollerden birini seçebilirsiniz</option>
-            </select> -->
+            </select>
             <button type="button" class="btn btn-primary mt-3" id="kaydet">Kaydet</button>
         </div>  
     </div>
@@ -93,6 +79,9 @@
         </div>
         <div id="rolliste">
         </div>
+        <select class="form-select" aria-label="Default select example" id="dropdown2">
+            <option selected>Aynı anda seçilemeyen rollerden birini seçebilirsiniz</option>
+        </select>
         <button type="button" class="btn btn-primary mt-3" id="update">Güncelle</button>
     </div>
     <div class="m-3 invisible" id="ekran3">
@@ -114,238 +103,10 @@
         </div>
         <div id="rollistesor">
         </div>
+        <select class="form-select" aria-label="Default select example" id="dropdown3">
+            <option selected>Aynı anda seçilemeyen rollerden birini seçebilirsiniz</option>
+        </select>
     </div>
-    <script>
-        const {ipcRenderer} = require('electron');
-        const finput = document.querySelector("#formFile");
-        const check_model = document.querySelector("#model");
-        const tekli = document.querySelector("#tekli");
-        const rolliste = document.querySelector("#ekran2 > #rolliste");
-        const kaydet = document.querySelector("#kaydet");
-        const coklukaydet = document.querySelector("#coklukaydet");
-        const kartidrev = document.querySelector("#kartidrev");
-        const tcnorev = document.querySelector("#tcnorev");
-        const isimsoy = document.querySelector("#isimrev");
-        const revizebuton = document.querySelector("#update");
-        const sicilrev = document.querySelector("#sicilrev");
-        const rollistesor = document.querySelector("#rollistesor");
-        const selectrol1 = document.querySelector("#dropdown1")
-        const radio1 = document.querySelector("#radio1");
-        const tabbuttons =  [ document.querySelector("#tab1"), document.querySelector("#tab2"), document.querySelector("#tab3") ];
-        let roller_dizisi = [];
-        let currentTab = 1;
-
-        function rollisteOlustur(rollist, roller) {
-            rollist.innerHTML = "";
-            for(let i = 0; i < roller.length; i++) {
-                let a = check_model.cloneNode(true);
-                a.className = "form-check";
-                if(roller[i].bireyselmi === true) { // NOT: Bireysel rolün adı değiştirilirse bunun da değişmesi gerekir.
-                    a.querySelector(":scope > #flexCheckDefault").disabled = true;
-                    a.querySelector(":scope > #flexCheckDefault").checked = true;
-                }
-                if(roller[i].aynianda_secilebilir === false) {
-                    radio1
-                   /*  let ayn = document.createElement("option");
-                    ayn.innerText = roller[i].name;
-                    ayn.value = i;
-                    console.log(ayn)
-                    //ayn.innerHTML = `<option value="${i}">${roller[i].name}</option>`;
-                    selectrol1.appendChild(ayn);
-                    console.log(selectrol1) */
-
-                }else {
-                    a.querySelector(":scope > #labol").textContent = roller[i].name;
-                    rollist.appendChild(a);
-                }
-            }
-        }
-
-        document.querySelectorAll('[data-bs-toggle="popover"]')
-            .forEach(popover => {
-                new bootstrap.Popover(popover)
-            })
-        
-        // Bu alert metodunu https://getbootstrap.com/docs/5.3/components/alerts/#examples'den aldım ama biraz değiştirdim
-        const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
-        const alertb = (message, type) => {
-            const wrapper = document.createElement('div')
-            wrapper.innerHTML = [
-                `<div class="alert alert-${type} alert-dismissible" role="alert">`,
-                `   <div>${message}</div>`,
-                `   <button type="button" onclick="this.parentElement.classList.add('invisible')" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`,
-                '</div>'
-            ].join('')
-
-            alertPlaceholder.append(wrapper)
-        }
-        //
-
-        for(let i = 0; i < tabbuttons.length; i++) {
-            tabbuttons[i].addEventListener('click', ()=>{
-                if(i == 1) {
-                    rollisteOlustur(rolliste, roller_dizisi)
-                }else if(i === 2) {
-                    rollisteOlustur(rollistesor, roller_dizisi)
-                }
-                let fromtab = document.querySelector("#ekran"+currentTab);
-                fromtab.classList.add("invisible");
-                document.querySelector("#ekran"+(i+1)).classList.remove("invisible");
-                tabbuttons[currentTab-1].querySelector(":scope > a").classList.remove("active");
-                tabbuttons[i].querySelector(":scope > a").classList.add("active");
-                currentTab = i+1;
-            })
-        }
-        ipcRenderer.invoke('roller').then((v)=>{
-            roller_dizisi = v;
-            rollisteOlustur(tekli, roller_dizisi)
-        })
-        
-        kaydet.addEventListener('click',()=>{
-            let isimsoyi = document.querySelector("#isim_soyisim").value;
-            let tckno = document.querySelector("#tcno").value;
-            let roller = [];
-            for(let i = 1; i < tekli.childElementCount; i++) {
-                if(tekli.children[i].querySelector(":scope > #flexCheckDefault").checked) {
-                    roller.push(i-1);
-                }
-            }
-            ipcRenderer.invoke('kayit', {
-                tc: parseInt(tckno),
-                isimsoyisim:isimsoyi,
-                roller:roller.join(',')
-            }).then((v)=>{
-                alertb(v, 'success');
-            }).catch((err)=>{
-                if(err) {
-                    alertb(err, 'danger')
-                    console.error(err);
-                }
-            })
-        })
-
-        coklukaydet.addEventListener('click',()=>{
-            if(!finput.files[0]) {
-                alertb("Çoklu kayıt için dosya seçiniz", "danger")
-            }
-            let val = finput.files[0].path;
-            ipcRenderer.invoke('coklu-kayit', val).then((v)=>{
-                alertb("İşlem başarıyla tamamlandı!", 'success')
-            }).catch((err)=>{
-                if(err) {
-                    alertb("HATA: " + err, 'danger')
-                    console.error(err);
-                }
-            })
-        })
-
-        tcnorev.addEventListener("change", ()=>{
-            let val = tcnorev.value;
-            ipcRenderer.invoke('get-user', parseInt(val)).then((v)=>{
-                if(!v) {
-                    alertb("Girilen bilgiler hatalı.", "danger")
-                    return;
-                }
-                isimsoy.value = v.isim_soyisim;
-                sicilrev.value = v.sicil_no;
-                kartidrev.value = v.kartid;
-                let rollerimiz = v.roller.split(',');
-                rollisteDoldur(rolliste, rollerimiz);
-            }).catch((err)=>{
-                if(err) {
-                    alertb("kullanıcı bulunamadı", "danger")
-                    console.info(err);
-                }
-            })
-        })
-        revizebuton.addEventListener('click', ()=>{
-            if(!tcnorev.value || isNaN(parseInt(tcnorev.value))) {
-                alertb("Girilen bilgiler hatalı veya eksik", 'danger')
-                return;
-            }
-            let roller = [];
-            for(let j = 0; j < roller_dizisi.length; j++) {
-                if(rolliste.children[j].querySelector(":scope > #flexCheckDefault").checked) {
-                    roller.push(j);
-                }
-            }
-            ipcRenderer.invoke('revize', parseInt(tcnorev.value), roller.join(',')).then((v)=>{
-                alertb(v, 'success');
-            }).catch((err)=>{
-                if(err) {
-                    alertb(err, 'danger');
-                    console.error(err);
-                }
-            })
-        })
-
-        function rollisteDoldur(rollistearg, rollerimiz) {
-            for(let i = 0; i < rollistearg.children.length; i++) {
-                rollistearg.children[i].querySelector(":scope > #flexCheckDefault").checked = false;
-            }
-            // bireyselse disabled olcak
-            for(let i = 0; i < rollerimiz.length; i++) {
-                let chckbx = rollistearg.children[parseInt(rollerimiz[i])];
-                chckbx.querySelector(":scope > #flexCheckDefault").checked = true;
-            }
-        }
-
-        sicilrev.addEventListener('change', async()=>{
-            let val = sicilrev.value;
-            let v = await ipcRenderer.invoke('get-user-sicil', parseInt(val)).catch((err)=>{
-                if(err) {
-                    alertb("kullanıcı bulunamadı", "danger")
-                    console.info(err);
-                }
-            });
-            if(!v) {
-                alertb("Girilen bilgiler hatalı.", "danger")
-                return;
-            }
-            isimsoy.value = v.isim_soyisim;
-            kartidrev.value = v.kartid;
-            tcnorev.value = v.tc_no
-            let rollerimiz = v.roller.split(',');
-            rollisteDoldur(rolliste, rollerimiz);
-        })
-
-        // EKRAN 3
-        const tcsor = document.querySelector("#tcnosor");
-        const sicilsor = document.querySelector("#sicilsor");
-        const isimsor = document.querySelector("#isimsor");
-        const kartidsor = document.querySelector("#kartidsor")
-        tcsor.addEventListener('change', ()=>{
-            let val = tcsor.value;
-            ipcRenderer.invoke('get-user', parseInt(val)).then((v)=>{
-                if(!v) {
-                    alertb("Girilen bilgiler hatalı.", "danger")
-                    return;
-                }
-                isimsor.value = v.isim_soyisim;
-                kartidsor.value = v.kartid;
-                sicilsor.value = v.sicil_no;
-                let rollerimiz = v.roller.split(',');
-                rollisteDoldur(rollistesor, rollerimiz)
-            }).catch((err)=>{
-                if(err) {
-                    alertb("kullanıcı bulunamadı", "danger")
-                    console.info(err);
-                }
-            })
-        })
-        sicilsor.addEventListener('change', async ()=>{
-            let val = sicilsor.value;
-            let kullanici = await ipcRenderer.invoke('get-user-sicil', parseInt(val)).catch((err)=>{if(err) {
-                    alertb("kullanıcı bulunamadı", "danger")
-                    console.info(err);
-                }});
-            if(!kullanici) return;
-            isimsor.value = kullanici.isim_soyisim;
-            kartidsor.value = kullanici.kartid;
-            tcsor.value = kullanici.tc_no;
-            let rollerimiz = kullanici.roller.split(',');
-            rollisteDoldur(rollistesor, rollerimiz)
-        })
-    </script>
+    <script src="frontend.js"></script>
 </body>
 </html>
