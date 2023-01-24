@@ -180,6 +180,16 @@ function UpdateUser(tc, yeniroller) {
     })
 }
 
+async function CokluRevize(bilgiler) { // bilgiler = [{sicilno:23, yenirol:"0,2,3"}]
+    for(let i = 0; i < bilgiler.length; i++) {
+        let user = await GetUserSicil(bilgiler[i].sicilno);
+        let cikti = await UpdateUser(user.tc_no, bilgiler[i].yenirol);
+        if(cikti !== "İşlem başarıyla gerçekleştirildi") {
+            console.log(cikti);
+        }
+    }
+}
+
 function GetUser(tc) {
     return new Promise((res,rej)=>{
         db.all("select sicil_no, isim_soyisim, kartid, roller from users where tc_no=?", [tc], (err, rows)=>{
@@ -285,5 +295,30 @@ app.on('ready', ()=>{
 
     ipcMain.handle('revize', (e, tc, yeniroller)=>{
         return UpdateUser(tc, yeniroller);
-    })
+    });
+    ipcMain.handle('coklu-revize', (e, path)=>{
+        return new Promise((res,rej)=>{
+            workbook.xlsx.readFile(path).then(()=>{
+                const worksheet = workbook.getWorksheet('Sheet1');
+                let bilgiler = [];
+                for(let i = 2; i <= worksheet.rowCount; i++) {
+                    const row = worksheet.getRow(i);
+                    const sicilno = parseInt(row.getCell('A').text); // NOT: sicilno'nun başına T gelmiyecek.
+                    if(isNaN(sicilno)) {
+                        rej("Hatalı sicilno, satır: " + i)
+                        break;
+                    }
+                    const yenirol = row.getCell('B').value.toString();
+                    let rolind = rollerdenIndekslere(yenirol.split(',')).join(',');
+                    bilgiler.push({
+                        sicilno: sicilno,
+                        yenirol: rolind,
+                    })
+                }
+                CokluRevize(bilgiler).then((v)=>{
+                    res(v);
+                }).catch((err)=>{ if(err) rej(err) })
+            }).catch((err)=>{ if(err) rej(err) });
+        })
+    });
 })

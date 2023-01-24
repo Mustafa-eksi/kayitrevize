@@ -37,7 +37,7 @@
             Eğer bir satırdaki kişi veritabanında zaten kayıtlıysa bu satır es geçilir, eğer dosyanın tamamı zaten kayıtlıysa veritabanına hiçbir şey eklenmez. Girilen satırlar arasında boş satır bırakılması önerilmez.">Nasıl çalışır?</button>
         </div>      
         <div class="m-3">
-            <label for="formFile" class="form-label" style="font-weight: bold;">Tek kayıt</label>
+            <label for="formFile" class="form-label" style="font-weight: bold;">Tekli kayıt</label>
             <div>
                 <div class="input-group mb-2">
                     <span class="input-group-text" id="basic-addon1">T.C. Kimlik No:</span>
@@ -61,6 +61,15 @@
         </div>  
     </div>
     <div class="m-3 invisible" id="ekran2">
+        <div>
+            <label for="formFile" class="form-label" style="font-weight: bold;">Çoklu revize</label>
+            <input class="form-control" type="file" id="revizef">
+            <button type="button" class="btn btn-primary mt-3" id="coklurevize">Dosyadakileri revize et</button>
+            <button type="button" class="btn btn-info btn-info mt-3" data-bs-toggle="popover" data-bs-title="Excel dosyası nasıl olmalı?" data-bs-content="Sütun sırası şöyledir: sicilno (başında T yok) ve yeniroller ('Bireysel,Araştırmacı,Yardımcı' gibi).
+            Seçeceğiniz excel'in ilk satırı, sütun isimleri yazılacağından görmezden gelinir.
+            Bir satırın revize işlemi sırasında hata çıkarsa diğer satıra atlanır ve devam edilir. Girilen satırlar arasında boş satır bırakılması önerilmez.">Nasıl çalışır?</button>
+        </div>
+        <label for="formFile" class="form-label mt-3" style="font-weight: bold;">Tekli revize</label>
         <div class="input-group mb-2">
             <span class="input-group-text" >T.C. Kimlik no:</span>
             <input type="text" id="tcnorev" class="form-control" placeholder="T.C. kimlik no giriniz" aria-label="Username" aria-describedby="basic-addon1">

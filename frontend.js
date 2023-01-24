@@ -5,6 +5,8 @@ const tekli = document.querySelector("#tekli");
 const rolliste = document.querySelector("#ekran2 > #rolliste");
 const kaydet = document.querySelector("#kaydet");
 const coklukaydet = document.querySelector("#coklukaydet");
+const coklurevize = document.querySelector("#coklurevize")
+const revizef = document.querySelector("#revizef");
 const kartidrev = document.querySelector("#kartidrev");
 const tcnorev = document.querySelector("#tcnorev");
 const isimsoy = document.querySelector("#isimrev");
@@ -148,6 +150,21 @@ coklukaydet.addEventListener('click',()=>{
     }
     let val = finput.files[0].path;
     ipcRenderer.invoke('coklu-kayit', val).then((v)=>{
+        alertb("İşlem başarıyla tamamlandı!", 'success')
+    }).catch((err)=>{
+        if(err) {
+            alertb("HATA: " + err, 'danger')
+            console.error(err);
+        }
+    })
+})
+
+coklurevize.addEventListener('click', ()=>{
+    if(!revizef.files[0]) {
+        alertb("Çoklu revize için dosya seçiniz", "danger")
+    }
+    let val = revizef.files[0].path;
+    ipcRenderer.invoke('coklu-revize', val).then((v)=>{
         alertb("İşlem başarıyla tamamlandı!", 'success')
     }).catch((err)=>{
         if(err) {
