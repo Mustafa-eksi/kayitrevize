@@ -150,12 +150,11 @@ coklukaydet.addEventListener('click',()=>{
     }
     let val = finput.files[0].path;
     ipcRenderer.invoke('coklu-kayit', val).then((v)=>{
+        console.log(v)
         alertb("İşlem başarıyla tamamlandı!", 'success')
     }).catch((err)=>{
-        if(err) {
             alertb("HATA: " + err, 'danger')
             console.error(err);
-        }
     })
 })
 

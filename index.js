@@ -53,14 +53,12 @@ function rolKontrol(roller) { // roller: string ("1,2,3" gibi). Roller tutarlıy
     let roll = roller.split(",");
     let aynandasecti = false;
     if(!roll.includes(ROLLER_DIZISI.findIndex(v => v.bireyselmi).toString())) {
-        console.log("buraya")
         return false;
     }
     for(let i = 0; i < roll.length; i++) {
         if(!ROLLER_DIZISI[parseInt(roll[i])].aynianda_secilebilir && !aynandasecti) {
             aynandasecti = true;
         }else if(!ROLLER_DIZISI[parseInt(roll[i])].aynianda_secilebilir && aynandasecti) {
-            console.log("hiyır")
             return false;
         }
     }
@@ -104,40 +102,15 @@ function kayit(tc, isimsoyisim, roller) {
     })
 }
 // rollerin doğruluğunu kontrol et yanlışsa reject
-function coklukayit(bilgiler) {
-    return new Promise((res,rej)=>{
-        if(bilgiler.length === 0) {
-            res("İşlem bitti.");
-        }else {
-            kayit(bilgiler[0].tc, bilgiler[0].isimsoyisim, bilgiler[0].roller).then((v1)=>{
-                let yeni = bilgiler;
-                yeni.shift();
-                coklukayit(yeni).then((v)=>{
-                    res(v);
-                }).catch((err)=>{
-                    if(err) {
-                        rej(err)
-                    }
-                })
-            }).catch((err)=>{
-                if(err) {
-                    if(err === "Bu tc veritabanında zaten kayıtlı") {
-                        let yeni = bilgiler;
-                        yeni.shift();
-                        coklukayit(yeni).then((v)=>{
-                            res(v);
-                        }).catch((err)=>{
-                            if(err) {
-                                rej(err)
-                            }
-                        })
-                    }else {
-                        rej(err)
-                    }
-                }
-            })
-        }
-    })
+async function coklukayit(bilgiler) {
+    for(let i = 0; i < bilgiler.length; i++) {
+        await kayit(bilgiler[i].tc, bilgiler[i].isimsoyisim, bilgiler[i].roller).catch(err=>{
+            if(err === "Bu tc veritabanında zaten kayıtlı")
+                return;
+            throw err;
+        })
+    }
+    return "İşlem bitti."
 }
 
 function rollerdenIndekslere(roller) {
@@ -154,7 +127,7 @@ function rollerdenIndekslere(roller) {
 function UpdateUser(tc, yeniroller) {
     return new Promise((res,rej)=>{
         if(!rolKontrol(yeniroller)) {
-            rej("Roller yanlış: " + yeniroller)
+            return rej("Roller yanlış: " + yeniroller)
         }
         db.all("select roller,sicil_no from users where tc_no=?", [tc], (err, rows)=>{
             if(err) {
@@ -182,6 +155,9 @@ function UpdateUser(tc, yeniroller) {
 
 async function CokluRevize(bilgiler) { // bilgiler = [{sicilno:23, yenirol:"0,2,3"}]
     for(let i = 0; i < bilgiler.length; i++) {
+        if(!rolKontrol(bilgiler[i].yenirol)) {
+            throw new Error((i+2)+". satırda hatalı rol")
+        }
         let user = await GetUserSicil(bilgiler[i].sicilno);
         let cikti = await UpdateUser(user.tc_no, bilgiler[i].yenirol);
         if(cikti !== "İşlem başarıyla gerçekleştirildi") {
@@ -257,31 +233,29 @@ app.on('ready', ()=>{
             })
         })
     });
-    ipcMain.handle('coklu-kayit', (e, path)=>{
-        return new Promise((res,rej)=>{
-            workbook.xlsx.readFile(path).then(()=>{
-                const worksheet = workbook.getWorksheet('Sheet1');
-                let bilgiler = [];
-                for(let i = 2; i <= worksheet.rowCount; i++) {
-                    const row = worksheet.getRow(i);
-                    const tckn = parseInt(row.getCell('A').text);
-                    if(isNaN(tckn)) {
-                        break;
-                    }
-                    const isimsoyisim = row.getCell('B').value.toString();
-                    const roller = row.getCell('C').value.toString();
-                    let rolind = rollerdenIndekslere(roller.split(',')).join(',');
-                    bilgiler.push({
-                        tc: tckn,
-                        isimsoyisim: isimsoyisim,
-                        roller: rolind
-                    })
+    ipcMain.handle('coklu-kayit', async (e, path)=>{
+            await workbook.xlsx.readFile(path);
+            const worksheet = workbook.getWorksheet('Sheet1');
+            let bilgiler = [];
+            for(let i = 2; i <= worksheet.rowCount; i++) {
+                const row = worksheet.getRow(i);
+                if(!row.getCell('A').text || !row.getCell('B').value || !row.getCell('C').value) {
+                    throw new Error("Dosya düzeninde hata! Dosya düzeni hakkında bilgi almak için 'Nasıl çalışır?' butonuna tıklayınız")
                 }
-                coklukayit(bilgiler).then((v)=>{
-                    res(v);
-                }).catch((err)=>{ if(err) rej(err) })
-            }).catch((err)=>{ if(err) rej(err) });
-        })
+                const tckn = parseInt(row.getCell('A').text);
+                const isimsoyisim = row.getCell('B').value.toString();
+                const roller = row.getCell('C').value.toString();
+                if(isNaN(tckn)) {
+                    break;
+                }
+                let rolind = rollerdenIndekslere(roller.split(',')).join(',');
+                bilgiler.push({
+                    tc: tckn,
+                    isimsoyisim: isimsoyisim,
+                    roller: rolind
+                })
+            }
+            return await coklukayit(bilgiler);
     });
     ipcMain.handle('roller', (e)=>{return ROLLER_DIZISI});
     
@@ -303,11 +277,14 @@ app.on('ready', ()=>{
                 let bilgiler = [];
                 for(let i = 2; i <= worksheet.rowCount; i++) {
                     const row = worksheet.getRow(i);
-                    const sicilno = parseInt(row.getCell('A').text); // NOT: sicilno'nun başına T gelmiyecek.
-                    if(isNaN(sicilno)) {
-                        rej("Hatalı sicilno, satır: " + i)
-                        break;
-                    }
+                    const hamsicil = row.getCell('A').text;
+                    const sicilno = parseInt(hamsicil.substring(1,hamsicil.length)); // NOT: sicilno'nun başına T gelmiyecek.
+                    if(isNaN(sicilno))
+                        return rej("Hatalı sicilno, satır: " + i)
+
+                    if(!row.getCell('B').value)
+                        return rej("Rol kısmı boş bırakılamaz, satır: " + i)
+
                     const yenirol = row.getCell('B').value.toString();
                     let rolind = rollerdenIndekslere(yenirol.split(',')).join(',');
                     bilgiler.push({
